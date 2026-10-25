@@ -1,0 +1,11 @@
+name: educational-analytics
+channels:
+  - defaults
+dependencies:
+  - python=3.11.5
+  - pyarrow=8.0.0=py311heb0a7fa_0
+  - numpy=1.26.4
+  - pip
+  - pip:
+      - -r requirements.txt
+      - -r requirements-notebooks.txt

@@ -1,0 +1,73 @@
+{
+  "dataset": "MoocRadar",
+  "selected_variant": "student-problem-middle",
+  "repository": "https://github.com/THU-KEG/MOOC-Radar",
+  "paper": "https://arxiv.org/abs/2304.02205",
+  "source_files": [
+    {
+      "name": "student-problem-middle.json",
+      "format": "JSON array of learner sequence objects; attempt records are in each object's seq array",
+      "bytes": 201525773,
+      "sha256": "fe0161b6c599569126648dd8c058509df314289f406a7ba5716d1bfbb50138e2"
+    },
+    {
+      "name": "problem.json",
+      "format": "JSON Lines: one problem metadata object per line",
+      "bytes": 6715077,
+      "sha256": "df343915a7021169d462871eea514b504b247f6145065971fa0f4dbb295dccd1"
+    }
+  ],
+  "expected_source_counts": {
+    "sequences": 14224,
+    "attempt_rows": 898933,
+    "users": 14224,
+    "problem_catalog_rows": 9383,
+    "observed_problem_ids": 2513,
+    "observed_exercise_ids": 580,
+    "catalog_course_ids": 73,
+    "minimum_timestamp": "2020-05-01 00:03:38",
+    "maximum_timestamp": "2020-12-14 03:56:10"
+  },
+  "normalization": [
+    "Parse the complete selected middle JSON array. Flatten every seq record in the published sequence/record order. No population, correctness, activity, date or outcome filtering and no deduplication are applied.",
+    "Write the event frame as events.parquet. Parse problem.json with JSON-Lines semantics and write problems.parquet.",
+    "Join course_id from the problem catalog by problem_id with a validated many-to-one relationship. Retain exercise_id from each event record. All source event rows have catalog matches.",
+    "Parse submit_time without inventing a timezone. Sort ascending by timestamp and unique log_id, reset the row index and assign zero-based int64 eid.",
+    "Project eid,user_id,course_id,exercise_id,ts,is_correct into history.parquet. All 898933 records are retained; all observed timestamps fall in 2020."
+  ],
+  "serving_snapshot_rules": {
+    "cuts": [
+      "2020-11-16",
+      "2020-11-23",
+      "2020-11-30",
+      "2020-12-07"
+    ],
+    "history_boundary": "ts < cut",
+    "observation_window": "cut minus 28 days <= ts < cut",
+    "population": "At least 10 observed window attempts per user-course participation and at least 6 distinct course exercise blocks known before cut; no requirement on future outcomes.",
+    "classification_query": "Most frequent prior-window exercise block, ties broken by ascending block index",
+    "changed_input": "Delete only served-window records with eid modulo 100 equal to zero; preserve query identities, participants and candidate catalog. Recompute shared course-catalog counts from the complete prior history with those records removed."
+  },
+  "maintenance_workload_rules": {
+    "cuts": [
+      "2020-11-16",
+      "2020-11-23",
+      "2020-11-30",
+      "2020-12-07"
+    ],
+    "target": "First observed attempt in the next seven days on a block known before cut, for the same at-least-10-attempt, at-least-6-block eligibility rule",
+    "purpose": "Fixed retrospective query workloads used to check correction-response algorithms; distinct from the past-only serving populations",
+    "journal_selection": "Independent rng.random over chronologically sorted eligible-window rows, probability 0.05",
+    "journal_seeds_by_cut": [
+      400020,
+      400021,
+      400022,
+      400023
+    ],
+    "journal_new_values": "Subsequent rng.integers(0,2,n_selected); no-op replacements are retained"
+  },
+  "expected_history_semantic_sha256": "b78f23e5c396d3b327495b88e394bf0a0d483845090bd04ac8c79c4a7b819242",
+  "history_semantic_serialization": "UTF-8 compact JSON arrays [eid,user_id,course_id,exercise_id,unix_timestamp_ns,is_correct], LF after each row, sorted by eid",
+  "reconstruction_script": "scripts/prepare_moocradar.py",
+  "redistribution": "Obtain raw files from the authors under their applicable terms. This manifest and preparation code do not grant a new data license."
+}

@@ -1,0 +1,155 @@
+{
+  "version": 1,
+  "purpose": "One locally executed educational-analytics campaign with freshly trained models and one common measurement and uncertainty methodology",
+  "datasets": [
+    "MoocRadar",
+    "ALPACAS",
+    "Moodle"
+  ],
+  "execution_order": [
+    "selection",
+    "common",
+    "scaling",
+    "maintenance"
+  ],
+  "server": {
+    "deployment": "Local ClickHouse HTTP endpoint",
+    "clickhouse_version": "25.3.2.39",
+    "max_threads": 2,
+    "max_insert_threads": 1,
+    "max_memory_usage": 4294967296,
+    "use_query_cache": 0,
+    "python_numeric_threads": 1,
+    "server_wide_memory": "Record actual server setting; the 4 GiB limit is per query, not the total server memory allocation"
+  },
+  "environment": "Modules run sequentially on one local host and ClickHouse lifecycle, using identical package versions and no concurrent experiment workers.",
+  "primary_statistic": "Arithmetic means with equal weights for each fixed snapshot/session stratum; reduction = 100 * (1 - variant_mean / baseline_mean)",
+  "uncertainty": {
+    "method": "Paired circular moving-block bootstrap within each fixed snapshot/session stratum, preserving variant pairing; strata are not resampled",
+    "resamples": 10000,
+    "primary_block_length": 5,
+    "sensitivity_block_lengths": [
+      1,
+      5,
+      10
+    ],
+    "selection_sensitivity_block_lengths": [
+      1,
+      2,
+      5
+    ],
+    "seed": 790024,
+    "scope": "Conditional measurement variability for these fixed data, tasks and hardware; not cross-institution generalization"
+  },
+  "repetition_and_integrity": {
+    "order": "Seeded randomized Williams designs balance variant position and pairwise precedence over measured rounds",
+    "warmups": "Three warm-up rounds per session; retained and marked, excluded from primary estimates by design",
+    "gc": "Enabled; explicit full collection before each paired group, outside variant timers",
+    "retention": "Retain every completed valid paired group; no removal or replacement based on speed, effect direction, or confidence interval",
+    "technical_failures": "Stop on failed correctness or execution checks; retain the incomplete attempt and reason separately; code changes require a new frozen attempt",
+    "persistence": "Append and fsync each completed paired group before proceeding",
+    "timing": "Monotonic high-resolution wall-clock; correctness checks and journal writes outside timers"
+  },
+  "selection": {
+    "sessions": 3,
+    "rounds_per_session": 10,
+    "warmup_rounds_per_session": 3,
+    "description": "Fresh local fitting and calibration of declared temporal folds for all datasets, followed by native catalog-search comparison on MoocRadar: all 64 task-pairs versus 16 independently evaluated task configurations followed by union",
+    "pipeline_timing_scope": "Single-pass catalog-evaluation pipeline including 16 model fits, 9 aggregate materializations, 64 joint evaluations or 18 independent/reference/union evaluations, selection and retirement. It measures one search pass, not the full ten-pass operational calibration procedure; the latter separately supplies operational choices and models.",
+    "split_integrity": "Only training fits models; calibration selects representations; held-out labels are used only for quality reporting",
+    "calibration_order": "For the 64 MoocRadar candidates, five seeded random permutations and their reversals form ten measured calibration rounds, balancing every candidate pair's precedence 5/5. Candidate positions are not uniform across ten rounds. Five transfer candidates use a complete ten-row Williams design.",
+    "quality_uncertainty": "MoocRadar: 1000 paired learner-cluster bootstrap draws. ALPACAS: 2000 paired published USER_ID-cluster draws retaining every course participation of each sampled identifier. Moodle: 2000 paired outcome-stratified draws over unique participants. Published USER_ID clustering does not itself validate person linkage across source courses.",
+    "operational_models": "Export freshly fitted portable model parameters and calibration choices before operational measurements; derived outputs are hashed and retained",
+    "maintenance_models": "Also export freshly fitted d28_NS classifier and d28_N ranker for the separately declared certificate-compatible fixed maintenance workload"
+  },
+  "common": {
+    "sessions": 3,
+    "rounds_per_session": 60,
+    "warmup_rounds_per_session": 3,
+    "snapshots": {
+      "MoocRadar": 4,
+      "ALPACAS": 1,
+      "Moodle": 1
+    },
+    "variants": [
+      "separate_selected",
+      "shared_selected"
+    ],
+    "phases": [
+      "answer",
+      "build",
+      "update"
+    ],
+    "input_boundary": "Canonical event window and common resident context prepared before timers; identical participant/query/candidate population for both variants",
+    "answer": "One HTTP aggregate-bundle retrieval, task-input reconstruction, freshly fitted model inference, ranking where required, and exact monitoring",
+    "build": "Materialize a new generation of all task aggregates, compact it, and retire the preceding owned generation",
+    "update": "Rebuild from the declared changed canonical window, publish the aggregate bundle view, and retire the preceding generation",
+    "change": "Remove canonical events with eid modulo 100 equal to zero; prepare and check changed common context outside timers",
+    "storage": "Active native aggregate parts plus compact JSON model parameters and plan specifications; common canonical history/context excluded identically and reported separately"
+  },
+  "scaling": {
+    "sessions": 3,
+    "rounds_per_session": 20,
+    "warmup_rounds_per_session": 3,
+    "variants": [
+      "separate_daily",
+      "separate_selected",
+      "shared_daily",
+      "shared_selected"
+    ],
+    "history": {
+      "snapshot": "moocradar_2020-11-30",
+      "factors": [
+        1,
+        2,
+        5,
+        10,
+        50
+      ],
+      "phases": [
+        "answer",
+        "build",
+        "update"
+      ],
+      "description": "Physically replicate the complete canonical window and participation population, preserving per-replica tasks, context and correction mask"
+    },
+    "population": {
+      "snapshots": "All four operational MoocRadar dates",
+      "fractions": [
+        0.25,
+        0.5,
+        1.0
+      ],
+      "phases": [
+        "answer"
+      ],
+      "description": "Deterministic nested served-population subsets from each fixed source snapshot. Canonical events and materialized aggregates are restricted to served participations; global course context remains fixed. Compare the four aggregate layouts with identical selected tasks within each subset."
+    }
+  },
+  "maintenance": {
+    "sessions": 3,
+    "rounds_per_session": 20,
+    "warmup_rounds_per_session": 3,
+    "factors": [
+      1,
+      2,
+      5,
+      10,
+      50
+    ],
+    "policies": [
+      "B",
+      "BB",
+      "S",
+      "A"
+    ],
+    "contracts": [
+      "D",
+      "DM",
+      "PM"
+    ],
+    "workload": "Fixed 2020-11-30 held-out 235 requests, 541 correction records and 898933-event history at factor one",
+    "boundary": "Response includes three serving reads and necessary historical lookups; exact-state completion is reported separately; publication is excluded from response timing",
+    "quality": "Recompute direct updated-state oracle with the same freshly fitted models and check every policy against the required response contract"
+  }
+}

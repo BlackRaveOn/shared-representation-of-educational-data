@@ -1,0 +1,25 @@
+# Local inputs and generated experiment artifacts
+/data/
+/local_data/
+/results/
+/outputs/
+
+# Credentials
+.env
+*.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python and editor caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

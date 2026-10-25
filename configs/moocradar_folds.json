@@ -1,0 +1,36 @@
+{
+  "temporal_folds": [
+    {
+      "calibration": "2020-08-31",
+      "test_offsets_days": [
+        14,
+        21
+      ],
+      "training": "weekly from 2020-05-25, cuts <= calibration minus 7 days"
+    },
+    {
+      "calibration": "2020-09-21",
+      "test_offsets_days": [
+        14,
+        21
+      ],
+      "training": "weekly from 2020-05-25, cuts <= calibration minus 7 days"
+    },
+    {
+      "calibration": "2020-10-12",
+      "test_offsets_days": [
+        14,
+        21
+      ],
+      "training": "weekly from 2020-05-25, cuts <= calibration minus 7 days"
+    },
+    {
+      "calibration": "2020-11-02",
+      "test_offsets_days": [
+        14,
+        21
+      ],
+      "training": "weekly from 2020-05-25, cuts <= calibration minus 7 days"
+    }
+  ]
+}

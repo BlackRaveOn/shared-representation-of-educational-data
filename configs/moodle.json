@@ -1,0 +1,25 @@
+{
+  "dataset_url": "https://data.mendeley.com/datasets/x8ntc8skgs/1",
+  "dataset_version": 1,
+  "train_periods": [
+    "2023 P2",
+    "2024 P1"
+  ],
+  "calibration_period": "2024 P2",
+  "test_period": "2025 P1",
+  "period_order": [
+    "2023 P2",
+    "2024 P1",
+    "2024 P2",
+    "2025 P1"
+  ],
+  "observation_days": 56,
+  "window_anchor": "Midnight of the minimum valid source timestamp separately for each published period; source timestamps are timezone-naive. This is the first 56 calendar days of the published period log, not a verified course-start window.",
+  "catalog_bin_days": [
+    1,
+    7,
+    14,
+    28,
+    56
+  ]
+}
